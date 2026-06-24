@@ -1,2 +1,39 @@
 # talk2graph
-Draw mathematical curve chart for K12 Math Teacher.
+
+用自然语言画数学图形。跟 AI 说「画一个内切圆半径为 3 的等腰三角形」，它就画出来。持续修改，精确控制。
+
+## 技术栈
+
+- **LLM** — 文本 → TikZ 代码
+- **TikZ** — 数学图形渲染（LaTeX 生态）
+- **tikzjax** — 浏览器端 WASM 渲染
+
+## 核心理念
+
+```
+用户描述 → LLM 生成 TikZ 代码 → 浏览器渲染 → 精确数学图
+用户修改 → LLM 看到旧代码 + 修改指令 → 局部编辑 → 重新渲染
+```
+
+代码即状态，渲染是副作用。每轮修改只改被要求的部分，其余完全一致。
+
+## 快速开始
+
+```bash
+# 打开 index.html，点击 ⚙️ 配置 API
+# Base URL: https://api.openai.com/v1
+# API Key: sk-...
+# 模型: gpt-5.5 或 claude-sonnet-4-5
+```
+
+## 示例
+
+> 画一个直角三角形，直角边分别是 3cm 和 4cm，标出边长
+
+> 把直角标记移到左边
+
+> 去掉边长的标注，加一条斜边上的高
+
+## license
+
+MIT
