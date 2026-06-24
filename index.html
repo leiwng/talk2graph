@@ -187,7 +187,19 @@ body {
 </div>
 
 <!-- ====== TikZ → SVG 渲染引擎 ====== -->
-<script src="https://cdn.jsdelivr.net/npm/@lunr/tikzjax@0.3.0/dist/tikzjax.bundle.min.js">
+<!-- Primary CDN: jsdelivr (globally CDN'd, usually works in China).
+     Fallback: unpkg. If both fail, a friendly error is shown. -->
+<script>
+  window.__tikzjaxReady = false;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@lunr/tikzjax@0.3.0/dist/tikzjax.bundle.min.js"
+  onload="window.__tikzjaxReady=true">
+</script>
+<script>
+  // Fallback if primary CDN failed
+  if (!window.__tikzjaxReady) {
+    document.write('<script src="https://unpkg.com/@lunr/tikzjax@0.3.0/dist/tikzjax.bundle.min.js"><\/script>');
+  }
 </script>
 
 <script>
@@ -264,8 +276,10 @@ async function renderTikz(source) {
   placeholder.style.display = 'none';
 
   try {
-    const wrapped = cleanForTikzJax(source);
-    const svg = await tikzjax.default(wrapped, {
+    if (typeof tikzjax === 'undefined') {
+      throw new Error('TikZJax 库加载失败。jsdelivr CDN 在国内可能被墙，试试挂 VPN 后刷新。');
+    }
+    const svg = await tikzjax.default(source, {
       showConsole: false,
       texPackages: {
         tikz: '',
@@ -282,26 +296,18 @@ async function renderTikz(source) {
     return svg;
   } catch (e) {
     console.error('TikZ render error:', e);
+    console.error('Source that failed:', source.substring(0, 500));
     placeholder.style.display = 'block';
-    placeholder.innerHTML = '<div class="icon">⚠️</div>TikZ 渲染失败，再看一遍代码？';
+    placeholder.innerHTML = `<div class="icon">⚠️</div>TikZ 渲染失败<br><small style="color:#999">控制台 (F12) 查看详细错误</small>`;
     return null;
   }
 }
 
 function cleanForTikzJax(source) {
-  let s = source;
-  // Remove standalone documentclass — tikzjax expects just tikzpicture
-  s = s.replace(/\\documentclass(\[.*?\])?\{.*?\}/g, '');
-  s = s.replace(/\\usepackage(\[.*?\])?\{.*?\}/g, '');
-  s = s.replace(/\\pgfplotsset\{.*?\}/g, '');
-  s = s.replace(/\\begin\{document\}/g, '');
-  s = s.replace(/\\end\{document\}/g, '');
-  // Wrap in tikzpicture if not present
-  if (!s.includes('\\begin{tikzpicture}') && !s.includes('\\begin{axis}')) {
-    s = '\\begin{tikzpicture}\n' + s.trim() + '\n\\end{tikzpicture}';
-  }
-  // Ensure it has document structure for tikzjax
-  return '\\documentclass{standalone}\n\\usepackage{tikz}\n\\usepackage{pgfplots}\n\\pgfplotsset{compat=1.18}\n\\begin{document}\n' + s.trim() + '\n\\end{document}';
+  // Just pass through — tikzjax handles complete LaTeX docs fine.
+  // Only clean: remove markdown code fences if present.
+  let s = source.replace(/```(?:latex|tex|tikz)?\s*\n?/g, '').replace(/```\s*$/g, '');
+  return s.trim();
 }
 
 // ============ 对话 ============
