@@ -5,6 +5,8 @@ const https = require('node:https');
 
 const DEFAULT_URL = 'http://127.0.0.1:3000';
 const SECRET_PATTERN = /(sk-[A-Za-z0-9_-]+|AKID[A-Za-z0-9]+|OPENAI_API_KEY|TENCENTCLOUD_SECRET)/i;
+const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+const COMMIT_PATTERN = /^[0-9a-f]{7,40}$/i;
 const BUILT_IN_PROMPTS = [
   {
     name: 'built-in template generation works',
@@ -110,9 +112,14 @@ async function verifyService(baseUrl = DEFAULT_URL) {
   try {
     const health = await fetchJson(`${normalizedBaseUrl}/healthz`);
     const serialized = JSON.stringify(health.json);
+    const hasVersionMetadata = VERSION_PATTERN.test(health.json.version || '')
+      && COMMIT_PATTERN.test(health.json.commit || '');
     checks.push(check(
       'health endpoint reports readiness',
-      health.ok && health.json.ok === true && health.json.service === 'talk2graph',
+      health.ok
+        && health.json.ok === true
+        && health.json.service === 'talk2graph'
+        && hasVersionMetadata,
       `HTTP ${health.status}; version=${health.json.version || 'unknown'}; commit=${health.json.commit || 'unknown'}`,
     ));
     checks.push(check(

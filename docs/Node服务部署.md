@@ -48,7 +48,7 @@ HOST=0.0.0.0 PORT=3000 npm start
 
 如果使用 systemd、宝塔、PM2 或云厂商进程管理器，保持同样的环境变量即可：`HOST=0.0.0.0`、`PORT=3000`，模型配置见下一节。
 
-发布包会包含 `build-info.json`。部署后 `/healthz` 会返回 `version` 和 `commit`，用于确认公网服务实际加载的是哪一次打包产物。
+发布包会包含 `build-info.json`。部署后 `/healthz` 会返回 `version` 和 `commit`，用于确认公网服务实际加载的是哪一次打包产物。`npm run verify:service` 会要求这两个字段有效，`unknown` 会被判定为未通过部署验收。
 
 ### systemd + nginx 示例
 
@@ -110,7 +110,7 @@ TALK2GRAPH_SERVICE_URL=https://your-node-service.example npm run verify:service
 验收项包括：
 
 - 首页可访问
-- `/healthz` 返回服务状态、版本、提交号，且不暴露密钥
+- `/healthz` 返回服务状态、有效版本、有效提交号，且不暴露密钥
 - `/api/generate` 可生成内置模板
 - 直角三角形 AC 直径圆题图返回确定性模板，而不是落到 LLM 兜底
 - API 响应包含 SVG 预览
