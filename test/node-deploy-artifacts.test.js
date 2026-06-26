@@ -63,6 +63,7 @@ test('Node service package script includes runtime files and excludes local-only
     'src/graph-engine.js',
     'src/llm-client.js',
     'src/tikz-renderer.js',
+    'build-info.json',
     'deploy/systemd/talk2graph.service',
     'deploy/nginx/talk2graph.conf',
   ]) {
@@ -74,6 +75,8 @@ test('Node service package script includes runtime files and excludes local-only
   }
 
   assert.match(source, /talk2graph-service\.tar\.gz/);
+  assert.match(source, /git/);
+  assert.match(source, /rev-parse/);
   assert.match(source, /tar/);
 });
 

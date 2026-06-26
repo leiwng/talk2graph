@@ -22,6 +22,15 @@ const runtimeFiles = [
   'deploy/nginx/talk2graph.conf',
 ];
 
+function currentCommit() {
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  const commit = result.status === 0 ? result.stdout.trim() : '';
+  return /^[0-9a-f]{40}$/i.test(commit) ? commit : 'unknown';
+}
+
 function copyFile(relativePath) {
   const source = path.join(repoRoot, relativePath);
   const target = path.join(packageRoot, relativePath);
@@ -32,6 +41,15 @@ function copyFile(relativePath) {
   fs.copyFileSync(source, target);
 }
 
+function writeBuildInfo() {
+  const target = path.join(packageRoot, 'build-info.json');
+  const info = {
+    commit: currentCommit(),
+    packagedAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(target, `${JSON.stringify(info, null, 2)}\n`);
+}
+
 function main() {
   fs.rmSync(packageRoot, { recursive: true, force: true });
   fs.rmSync(archivePath, { force: true });
@@ -40,6 +58,7 @@ function main() {
   for (const file of runtimeFiles) {
     copyFile(file);
   }
+  writeBuildInfo();
 
   const result = spawnSync('tar', [
     '-czf',

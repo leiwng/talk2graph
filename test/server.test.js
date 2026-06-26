@@ -96,6 +96,8 @@ test('GET /healthz returns service readiness without exposing secrets', async (t
   assert.equal(json.ok, true);
   assert.equal(json.service, 'talk2graph');
   assert.equal(json.modelConfigured, true);
+  assert.match(json.version, /^\d+\.\d+\.\d+/);
+  assert.match(json.commit, /^[0-9a-f]{7,40}$|^unknown$/);
   assert.doesNotMatch(JSON.stringify(json), /test-key/);
 });
 

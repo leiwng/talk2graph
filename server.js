@@ -4,6 +4,7 @@ const path = require('node:path');
 const { generateGraph } = require('./src/graph-engine');
 const { callLlm, hasLlmConfig } = require('./src/llm-client');
 const { renderTikzToSvg } = require('./src/tikz-renderer');
+const packageInfo = require('./package.json');
 
 const ROOT = __dirname;
 const STATIC_FILES = new Map([
@@ -27,10 +28,51 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function readGitCommit() {
+  const headPath = path.join(ROOT, '.git', 'HEAD');
+  try {
+    const head = fs.readFileSync(headPath, 'utf8').trim();
+    if (/^[0-9a-f]{40}$/i.test(head)) return head;
+    const refMatch = head.match(/^ref:\s+(.+)$/);
+    if (!refMatch) return 'unknown';
+    const refPath = path.join(ROOT, '.git', refMatch[1]);
+    const ref = fs.readFileSync(refPath, 'utf8').trim();
+    return /^[0-9a-f]{40}$/i.test(ref) ? ref : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function readPackagedCommit() {
+  try {
+    const raw = fs.readFileSync(path.join(ROOT, 'build-info.json'), 'utf8');
+    const info = JSON.parse(raw);
+    return typeof info.commit === 'string' ? info.commit : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function serviceMetadata(env) {
+  const candidates = [
+    env.TALK2GRAPH_COMMIT,
+    env.GIT_COMMIT,
+    readPackagedCommit(),
+    readGitCommit(),
+  ];
+  const rawCommit = candidates.find((candidate) => /^[0-9a-f]{7,40}$/i.test(candidate || '')) || 'unknown';
+  const commit = /^[0-9a-f]{7,40}$/i.test(rawCommit) ? rawCommit : 'unknown';
+  return {
+    version: packageInfo.version,
+    commit,
+  };
+}
+
 function handleHealth(res, env) {
   sendJson(res, 200, {
     ok: true,
     service: 'talk2graph',
+    ...serviceMetadata(env),
     modelConfigured: hasLlmConfig(env),
   });
 }

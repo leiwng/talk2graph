@@ -113,7 +113,7 @@ async function verifyService(baseUrl = DEFAULT_URL) {
     checks.push(check(
       'health endpoint reports readiness',
       health.ok && health.json.ok === true && health.json.service === 'talk2graph',
-      `HTTP ${health.status}`,
+      `HTTP ${health.status}; version=${health.json.version || 'unknown'}; commit=${health.json.commit || 'unknown'}`,
     ));
     checks.push(check(
       'health endpoint does not expose secrets',

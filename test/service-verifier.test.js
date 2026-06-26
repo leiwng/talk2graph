@@ -31,7 +31,13 @@ test('service verifier accepts a Node deployment with homepage, health, and API 
     }
 
     if (req.method === 'GET' && req.url === '/healthz') {
-      json(res, 200, { ok: true, service: 'talk2graph', modelConfigured: true });
+      json(res, 200, {
+        ok: true,
+        service: 'talk2graph',
+        version: '1.0.0',
+        commit: 'abcdef1',
+        modelConfigured: true,
+      });
       return;
     }
 
@@ -65,6 +71,10 @@ test('service verifier accepts a Node deployment with homepage, health, and API 
       'template response includes SVG preview',
       'template response includes TikZ export',
     ]);
+    assert.match(
+      result.checks.find((check) => check.name === 'health endpoint reports readiness').detail,
+      /version=1\.0\.0; commit=abcdef1/,
+    );
     assert.equal(result.checks.every((check) => check.ok), true);
   });
 });
