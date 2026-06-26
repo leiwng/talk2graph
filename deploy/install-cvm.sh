@@ -30,6 +30,8 @@ install -d -m 0755 "${APP_DIR}"
 tar -xzf "${ARCHIVE}" -C "${APP_DIR}" --strip-components=1
 cd "${APP_DIR}"
 
+EXPECTED_COMMIT="$(node -e "const fs=require('fs'); const info=JSON.parse(fs.readFileSync('build-info.json','utf8')); process.stdout.write(info.commit || 'unknown');")"
+
 npm ci --omit=dev
 chown -R "${SERVICE_USER}:${SERVICE_USER}" "${APP_DIR}"
 
@@ -49,6 +51,7 @@ done
 echo "Health:"
 cat /tmp/talk2graph-health.json
 echo
+node -e "const fs=require('fs'); const health=JSON.parse(fs.readFileSync('/tmp/talk2graph-health.json','utf8')); const expectedCommit=process.argv[1]; if(!/^\\d+\\.\\d+\\.\\d+/.test(health.version||'')) { console.error('health metadata check failed: invalid version'); process.exit(1); } if(health.commit!==expectedCommit) { console.error('health metadata check failed: expected commit '+expectedCommit+', got '+health.commit); process.exit(1); } console.log('health metadata check passed: commit='+health.commit); " "${EXPECTED_COMMIT}"
 
 echo "Checking diameter circle template..."
 curl -fsS \

@@ -41,10 +41,11 @@ npm run package:service
 上传到 CVM、Lighthouse 或其他 Node 运行环境后：
 
 ```bash
-sudo bash deploy/install-cvm.sh /tmp/talk2graph-service.tar.gz
+tar -xOf /tmp/talk2graph-service.tar.gz talk2graph-service/deploy/install-cvm.sh \
+  | sudo bash -s -- /tmp/talk2graph-service.tar.gz
 ```
 
-该脚本会解压到 `/opt/talk2graph-service`、安装生产依赖、安装 systemd unit、重启服务，并在服务器本机检查 `/healthz` 和直角三角形 AC 直径圆题图模板。模型配置见下一节。
+该脚本会从发布包解压到 `/opt/talk2graph-service`、安装生产依赖、安装 systemd unit、重启服务，并在服务器本机检查 `/healthz` 的版本提交号和直角三角形 AC 直径圆题图模板。模型配置见下一节。
 
 发布包会包含 `build-info.json`。部署后 `/healthz` 会返回 `version` 和 `commit`，用于确认公网服务实际加载的是哪一次打包产物。`npm run verify:service` 会要求这两个字段有效，`unknown` 会被判定为未通过部署验收。
 

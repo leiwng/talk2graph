@@ -94,7 +94,17 @@ test('CVM install script installs the package and verifies the running service m
   assert.match(script, /curl -fsS .*\/healthz/);
   assert.match(script, /curl -fsS/);
   assert.match(script, /\/api\/generate/);
+  assert.match(script, /build-info\.json/);
+  assert.match(script, /expectedCommit/);
+  assert.match(script, /health\.commit/);
   assert.match(script, /diameter circle template/);
+});
+
+test('Node deployment docs show how to run the installer directly from the archive', () => {
+  const docs = readProjectFile('docs/Node服务部署.md');
+
+  assert.match(docs, /tar -xOf \/tmp\/talk2graph-service\.tar\.gz talk2graph-service\/deploy\/install-cvm\.sh/);
+  assert.match(docs, /sudo bash -s -- \/tmp\/talk2graph-service\.tar\.gz/);
 });
 
 test('systemd template runs the packaged Node service with production defaults', () => {
