@@ -5,6 +5,18 @@ const https = require('node:https');
 
 const DEFAULT_URL = 'http://127.0.0.1:3000';
 const SECRET_PATTERN = /(sk-[A-Za-z0-9_-]+|AKID[A-Za-z0-9]+|OPENAI_API_KEY|TENCENTCLOUD_SECRET)/i;
+const BUILT_IN_PROMPTS = [
+  {
+    name: 'built-in template generation works',
+    prompt: '画一个直角三角形，两条直角边分别是 3 和 4，标出边长',
+    messagePattern: /直角三角形/,
+  },
+  {
+    name: 'diameter circle template generation works',
+    prompt: '画直角三角形 ABC，C 为直角顶点，AC=3，BC=4；以 AC 为直径画圆，圆与斜边 AB 相交于点 D',
+    messagePattern: /AC 为直径|交点 D/,
+  },
+];
 
 function check(name, ok, detail) {
   return { name, ok, detail };
@@ -63,6 +75,18 @@ async function fetchJson(url, options = {}) {
   };
 }
 
+async function generatePrompt(baseUrl, prompt) {
+  try {
+    return await fetchJson(`${baseUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+  } catch (error) {
+    return { ok: false, status: 0, json: {}, body: error.message };
+  }
+}
+
 async function verifyService(baseUrl = DEFAULT_URL) {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
   const checks = [];
@@ -101,24 +125,20 @@ async function verifyService(baseUrl = DEFAULT_URL) {
     checks.push(check('health endpoint does not expose secrets', false, error.message));
   }
 
-  let generated = { ok: false, status: 0, json: {} };
-  try {
-    generated = await fetchJson(`${normalizedBaseUrl}/api/generate`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        prompt: '画一个直角三角形，两条直角边分别是 3 和 4，标出边长',
-      }),
-    });
-  } catch (error) {
-    generated = { ok: false, status: 0, json: {}, body: error.message };
+  const generatedResults = [];
+  for (const item of BUILT_IN_PROMPTS) {
+    const generated = await generatePrompt(normalizedBaseUrl, item.prompt);
+    generatedResults.push(generated);
+    checks.push(check(
+      item.name,
+      generated.ok
+        && generated.json.kind === 'template'
+        && item.messagePattern.test(generated.json.message || generated.json.tikzSource || ''),
+      `HTTP ${generated.status || 'network-error'}; kind=${generated.json.kind || 'missing'}`,
+    ));
   }
 
-  checks.push(check(
-    'built-in template generation works',
-    generated.ok && generated.json.kind === 'template',
-    `HTTP ${generated.status || 'network-error'}`,
-  ));
+  const generated = generatedResults[0] || { json: {} };
   checks.push(check(
     'template response includes SVG preview',
     typeof generated.json.svg === 'string' && /<svg/i.test(generated.json.svg),
