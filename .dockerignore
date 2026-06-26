@@ -1,0 +1,10 @@
+.git
+node_modules
+.env
+*.log
+test
+docs
+deploy_cos.py
+.DS_Store
+coverage
+npm-debug.log*

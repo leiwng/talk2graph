@@ -1,0 +1,19 @@
+[Unit]
+Description=talk2graph Node service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/talk2graph-service
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+User=talk2graph
+Group=talk2graph
+
+[Install]
+WantedBy=multi-user.target

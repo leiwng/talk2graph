@@ -3,176 +3,296 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>talk2graph — 用自然语言画数学图形</title>
+<title>talk2graph - 用自然语言画数学图形</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: #f5f5f7;
-  display: flex; height: 100vh; overflow: hidden;
+  background: #f4f6f8;
+  color: #1f2937;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
-
-/* ========== 左侧：对话区 ========== */
 #chat-panel {
-  width: 420px; min-width: 360px;
-  background: #fff; border-right: 1px solid #e5e5e7;
-  display: flex; flex-direction: column;
+  width: 420px;
+  min-width: 340px;
+  background: #fff;
+  border-right: 1px solid #d8dee8;
+  display: flex;
+  flex-direction: column;
 }
 #chat-header {
-  padding: 16px 20px; border-bottom: 1px solid #e5e5e7;
-  font-size: 18px; font-weight: 700; color: #1d1d1f;
-  display: flex; align-items: center; gap: 8px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 #chat-header .logo { font-size: 24px; }
 #chat-history {
-  flex: 1; overflow-y: auto; padding: 16px;
-  display: flex; flex-direction: column; gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.msg { max-width: 90%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.6; }
-.msg.user { background: #0071e3; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
-.msg.assistant { background: #f0f0f2; color: #1d1d1f; align-self: flex-start; border-bottom-left-radius: 4px; }
-.msg.assistant .tikz-source-btn {
-  display: inline-block; margin-top: 6px; font-size: 11px;
-  color: #0071e3; cursor: pointer; background: none; border: none; padding: 2px 0;
-  text-decoration: underline;
+.msg {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.msg.user {
+  background: #0f766e;
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+.msg.assistant {
+  background: #eef2f7;
+  color: #111827;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
 }
 #chat-input-area {
-  padding: 12px 16px; border-top: 1px solid #e5e5e7;
-  display: flex; gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  gap: 8px;
 }
 #chat-input {
-  flex: 1; padding: 10px 14px; border: 1px solid #d2d2d7;
-  border-radius: 20px; font-size: 14px; outline: none; font-family: inherit;
-}
-#chat-input:focus { border-color: #0071e3; }
-#send-btn {
-  padding: 10px 20px; background: #0071e3; color: #fff; border: none;
-  border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer;
-}
-#send-btn:disabled { background: #a1c9f5; cursor: not-allowed; }
-#error-banner {
-  display: none; padding: 10px 16px; background: #fff3cd;
-  color: #856404; font-size: 13px; border-top: 1px solid #ffc107;
-}
-
-/* ========== 右侧：图形预览区 ========== */
-#preview-panel {
-  flex: 1; display: flex; flex-direction: column; background: #fafafa;
-}
-#preview-header {
-  padding: 12px 20px; font-size: 13px; color: #86868b;
-  display: flex; justify-content: space-between; align-items: center;
-  border-bottom: 1px solid #e5e5e7;
-}
-#preview-header .actions { display: flex; gap: 8px; }
-#preview-header .actions button {
-  font-size: 12px; padding: 4px 12px; border: 1px solid #d2d2d7;
-  border-radius: 6px; background: #fff; cursor: pointer; color: #1d1d1f;
-}
-#preview-header .actions button:hover { background: #f0f0f2; }
-#preview-canvas {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 20px; overflow: auto;
-}
-#preview-canvas img { max-width: 100%; max-height: 100%; object-fit: contain; }
-#preview-placeholder {
-  color: #c7c7cc; font-size: 16px; text-align: center;
-}
-#preview-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
-#loading-indicator {
-  display: none; font-size: 14px; color: #86868b; text-align: center;
-}
-#loading-indicator .spinner {
-  display: inline-block; width: 20px; height: 20px;
-  border: 2px solid #e5e5e7; border-top-color: #0071e3;
-  border-radius: 50%; animation: spin 0.8s linear infinite;
-  margin-right: 8px; vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ========== API 设置浮层 ========== */
-#api-settings {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center;
-  z-index: 100;
-}
-#api-settings-dialog {
-  background: #fff; border-radius: 16px; padding: 28px; width: 400px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-}
-#api-settings-dialog h3 { margin-bottom: 16px; font-size: 18px; }
-#api-settings-dialog label { display: block; margin-bottom: 12px; font-size: 13px; color: #555; }
-#api-settings-dialog input, #api-settings-dialog select {
-  width: 100%; padding: 8px 12px; border: 1px solid #d2d2d7;
-  border-radius: 8px; font-size: 14px; margin-top: 4px;
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
   font-family: inherit;
 }
-#api-settings-dialog .btn-row { display: flex; gap: 8px; margin-top: 20px; }
-#api-settings-dialog .btn-row button {
-  flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600;
-  border: none; cursor: pointer;
+#chat-input:focus { border-color: #0f766e; }
+#send-btn {
+  padding: 10px 20px;
+  background: #0f766e;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
-#api-save-btn { background: #0071e3; color: #fff; }
-#api-cancel-btn { background: #f0f0f2; color: #1d1d1f; }
+#send-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+#error-banner {
+  display: none;
+  padding: 10px 16px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+  border-top: 1px solid #fed7aa;
+}
+.example-prompts {
+  padding: 12px 16px 0;
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.example-prompts button {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+.example-prompts button:hover {
+  border-color: #0f766e;
+  background: #f0fdfa;
+  color: #0f766e;
+}
+#preview-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+#preview-header {
+  padding: 12px 20px;
+  font-size: 13px;
+  color: #64748b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+#preview-header .actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#preview-header .actions button {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  color: #1f2937;
+}
+#preview-header .actions button:hover { background: #eef2f7; }
+#preview-header .actions button:disabled {
+  color: #94a3b8;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+#preview-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+}
+#preview-canvas img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+#preview-placeholder,
+#loading-indicator {
+  color: #94a3b8;
+  font-size: 16px;
+  text-align: center;
+}
+#preview-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
+#loading-indicator { display: none; }
+#loading-indicator .spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dbe3ee;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 820px) {
+  body {
+    flex-direction: column;
+    min-height: 100dvh;
+    height: auto;
+    overflow: auto;
+  }
+  #chat-panel {
+    width: 100%;
+    min-width: 0;
+    min-height: 48dvh;
+    max-height: 56dvh;
+    border-right: 0;
+    border-bottom: 1px solid #d8dee8;
+  }
+  #chat-header { padding: 12px 16px; }
+  #chat-history { padding: 12px; }
+  .example-prompts {
+    grid-template-columns: 1fr;
+    max-height: 104px;
+    overflow-y: auto;
+    padding: 10px 12px 0;
+  }
+  #chat-input-area {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 10px 12px;
+  }
+  #preview-panel { min-height: 44dvh; }
+  #preview-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  #preview-header .actions {
+    width: 100%;
+  }
+  #preview-header .actions button {
+    flex: 1;
+    min-width: 88px;
+  }
+  #preview-canvas {
+    min-height: 280px;
+    padding: 12px;
+  }
+}
 </style>
 </head>
 <body>
-
-<!-- ====== API 设置 ====== -->
-<div id="api-settings">
-  <div id="api-settings-dialog">
-    <h3>⚙️ API 设置</h3>
-    <label>Base URL
-      <input id="api-base-url" type="text" placeholder="https://api.openai.com/v1">
-    </label>
-    <label>API Key
-      <input id="api-key" type="password" placeholder="sk-...">
-    </label>
-    <label>模型
-      <select id="api-model">
-        <option value="gpt-5.5">GPT-5.5</option>
-        <option value="gpt-5.4">GPT-5.4</option>
-        <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-        <option value="gpt-4o">GPT-4o</option>
-        <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
-        <option value="deepseek-chat">DeepSeek Chat</option>
-      </select>
-    </label>
-    <div class="btn-row">
-      <button id="api-cancel-btn" onclick="toggleSettings()">取消</button>
-      <button id="api-save-btn" onclick="saveSettings()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- ====== 左侧对话区 ====== -->
 <div id="chat-panel">
   <div id="chat-header">
     <span class="logo">📐</span> talk2graph
-    <span style="flex:1;text-align:right;font-size:12px;color:#0071e3;cursor:pointer" onclick="toggleSettings()">⚙️</span>
   </div>
   <div id="chat-history">
     <div class="msg assistant">
       告诉我你想画什么样的数学图形<br>
-      试试：<b>"画一个直角三角形，两条直角边分别是3和4，标出边长"</b>
+      试试：<b>画一个直角三角形，两条直角边分别是 3 和 4，标出边长</b>
     </div>
   </div>
   <div id="error-banner"></div>
+  <div class="example-prompts" aria-label="示例图形">
+    <button type="button" data-prompt="画一个直角三角形，两条直角边分别是 3 和 4，标出边长">直角三角形</button>
+    <button type="button" data-prompt="画一个等边三角形，边长 5cm">等边三角形</button>
+    <button type="button" data-prompt="画一个正方形，边长 4cm">正方形</button>
+    <button type="button" data-prompt="画一个圆，半径 3cm，标注圆心">圆心半径</button>
+    <button type="button" data-prompt="画一个等腰三角形，底边长 6cm，腰长 5cm">底腰等腰</button>
+    <button type="button" data-prompt="画直角三角形的内切圆，直角边分别为 3 和 4，标出内切圆圆心和半径">直角内切圆</button>
+    <button type="button" data-prompt="画 y = sin(x) 和 y = cos(x) 在 -2π 到 2π 的图像，用不同颜色区分">正弦/余弦</button>
+    <button type="button" data-prompt="画 y = 2x + 1 的图像，在 -5 到 5 范围内">一次函数</button>
+    <button type="button" data-prompt="画 y = x² 的图像，在 -3 到 3 范围内">二次函数</button>
+    <button type="button" data-prompt="画 y = sin(x) 的图像，在 -2π 到 2π 范围内">正弦函数</button>
+    <button type="button" data-prompt="画参数方程绘制的椭圆：x=3cos(t), y=2sin(t)，t 从 0 到 2π">参数椭圆</button>
+    <button type="button" data-prompt="画一个圆，内接一个正六边形，标注圆心">圆内接六边形</button>
+    <button type="button" data-prompt="画一个底角 30° 的等腰三角形，腰长 5cm">等腰三角形</button>
+    <button type="button" data-prompt="画一个内切圆半径为 3 的等腰三角形">内切圆等腰三角形</button>
+    <button type="button" data-prompt="画 y = x² 和 y = 2x + 1 的交点区域，用阴影标出来">交点阴影</button>
+    <button type="button" data-prompt="画一个长方体，被一个平面截成斜截面，标出截面">长方体截面</button>
+    <button type="button" data-prompt="画一个班级成绩条形统计图，数据为优秀10人，良好18人，及格8人，待提高4人">条形统计图</button>
+    <button type="button" data-prompt="画一个柱状图：一班 85 分，二班 78 分，三班 92 分，四班 80 分">班级柱状图</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="把直角标记从内侧移到外侧">直角标记外侧</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="去掉边长的标注，加一条斜边上的高">斜边上的高</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="加一条辅助线">加辅助线</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="标出∠A">标出角A</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="把角B标出来">标出角B</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="标出∠C">标出角C</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="right-triangle" data-prompt="把辅助线改成虚线">辅助线虚线</button>
+    <button type="button" data-requires-graph="true" data-graph-scope="plot" data-prompt="把坐标系的范围改成 -5 到 5">范围 -5 到 5</button>
+  </div>
   <div id="chat-input-area">
-    <input id="chat-input" type="text" placeholder="描述你要画的图形..."
-      onkeydown="if(event.key==='Enter')sendMessage()">
-    <button id="send-btn" onclick="sendMessage()">发送</button>
+    <input id="chat-input" type="text" placeholder="描述你要画的图形或修改要求...">
+    <button id="send-btn" type="button">发送</button>
   </div>
 </div>
 
-<!-- ====== 右侧图形预览 ====== -->
 <div id="preview-panel">
   <div id="preview-header">
-    <span>📐 图形预览</span>
+    <span>图形预览</span>
     <div class="actions">
-      <button onclick="downloadSVG()">⬇ SVG</button>
-      <button onclick="downloadTeX()">⬇ TikZ</button>
-      <button onclick="undoLast()">↩ 撤销</button>
+      <button id="download-svg-btn" type="button">下载 SVG</button>
+      <button id="download-tikz-btn" type="button">下载 TikZ</button>
+      <button id="undo-btn" type="button">撤销</button>
     </div>
   </div>
   <div id="preview-canvas">
@@ -181,289 +301,12 @@ body {
       在左侧描述你要画的图形
     </div>
     <div id="loading-indicator">
-      <span class="spinner"></span>LLM 正在生成图形...
+      <span class="spinner"></span>正在生成图形...
     </div>
   </div>
 </div>
 
-<!-- ====== TikZ → SVG 渲染引擎 ====== -->
-<!-- Primary CDN: jsdelivr (globally CDN'd, usually works in China).
-     Fallback: unpkg. If both fail, a friendly error is shown. -->
-<script>
-  window.__tikzjaxReady = false;
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@lunr/tikzjax@0.3.0/dist/tikzjax.bundle.min.js"
-  onload="window.__tikzjaxReady=true">
-</script>
-<script>
-  // Fallback if primary CDN failed
-  if (!window.__tikzjaxReady) {
-    document.write('<script src="https://unpkg.com/@lunr/tikzjax@0.3.0/dist/tikzjax.bundle.min.js"><\/script>');
-  }
-</script>
-
-<script>
-// ============ 状态管理 ============
-let currentTikzSource = '';
-let tikzHistory = [];
-let isGenerating = false;
-let apiBaseUrl = localStorage.getItem('talk2graph_base_url') || '';
-let apiKey = localStorage.getItem('talk2graph_api_key') || '';
-let apiModel = localStorage.getItem('talk2graph_model') || 'gpt-5.5';
-
-// ============ System Prompt ============
-const SYSTEM_PROMPT = `你是数学图形生成器。用户描述一个数学图形（几何图形、函数图像、坐标系、统计图表等），你生成精确的 TikZ 代码。
-
-## 规则
-1. 所有图形必须包含完整的 LaTeX 文档结构：
-\\documentclass[tikz,border=10pt]{standalone}
-\\usepackage{tikz}
-\\usepackage{amsmath}
-\\usepackage{pgfplots}
-\\pgfplotsset{compat=1.18}
-\\begin{document}
-... TikZ/PGFPlots 代码 ...
-\\end{document}
-
-2. 长度、角度必须按照用户的要求精确设定。标注文字用中文。
-3. 函数图像 (y=sin(x), y=x^2 等) 用 pgfplots 的 \\addplot。
-4. 几何图形 (三角形、圆、多边形等) 用标准 TikZ 的 \\draw, \\fill, \\node。
-5. 使用合适的线宽 (thick/very thick)、颜色 (blue/red/gray) 使图形清晰。
-6. 辅助线用 dashed 且 gray。
-7. 避免使用 \\usetikzlibrary 中不常用的库。
-8. 重要：当用户要求修改现有图形时，基于上一版代码做局部修改，只改被要求的部分，其余完全保持原样。`;
-
-// ============ API 调用 ============
-async function callLLM(messages) {
-  const resp = await fetch(`${apiBaseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: apiModel,
-      messages: messages,
-      temperature: 0.3,
-      max_tokens: 4096,
-    }),
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${resp.status}`);
-  }
-  const data = await resp.json();
-  return data.choices[0].message.content;
-}
-
-function extractTikz(text) {
-  const re = /```(?:latex|tex|tikz)?\s*([\s\S]*?)```/g;
-  const matches = [...text.matchAll(re)];
-  if (matches.length > 0) return matches[matches.length - 1][1].trim();
-  const beginRe = /(\\documentclass[\s\S]*?\\end{document})/;
-  const m = text.match(beginRe);
-  if (m) return m[1].trim();
-  return text.trim();
-}
-
-// ============ 渲染 ============
-async function renderTikz(source) {
-  const canvas = document.getElementById('preview-canvas');
-  // Clear previous
-  const oldImg = canvas.querySelector('img');
-  if (oldImg) oldImg.remove();
-  const placeholder = document.getElementById('preview-placeholder');
-  placeholder.style.display = 'none';
-
-  try {
-    if (typeof tikzjax === 'undefined') {
-      throw new Error('TikZJax 库加载失败。jsdelivr CDN 在国内可能被墙，试试挂 VPN 后刷新。');
-    }
-    const svg = await tikzjax.default(source, {
-      showConsole: false,
-      texPackages: {
-        tikz: '',
-        pgfplots: '',
-        amsmath: '',
-      },
-    });
-    const img = document.createElement('img');
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
-    img.style.objectFit = 'contain';
-    canvas.appendChild(img);
-    return svg;
-  } catch (e) {
-    console.error('TikZ render error:', e);
-    console.error('Source that failed:', source.substring(0, 500));
-    placeholder.style.display = 'block';
-    placeholder.innerHTML = `<div class="icon">⚠️</div>TikZ 渲染失败<br><small style="color:#999">控制台 (F12) 查看详细错误</small>`;
-    return null;
-  }
-}
-
-function cleanForTikzJax(source) {
-  // Just pass through — tikzjax handles complete LaTeX docs fine.
-  // Only clean: remove markdown code fences if present.
-  let s = source.replace(/```(?:latex|tex|tikz)?\s*\n?/g, '').replace(/```\s*$/g, '');
-  return s.trim();
-}
-
-// ============ 对话 ============
-let conversationMessages = [];
-
-function addMessage(role, text) {
-  const history = document.getElementById('chat-history');
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.textContent = text;
-  history.appendChild(div);
-  history.scrollTop = history.scrollHeight;
-}
-
-async function sendMessage() {
-  if (isGenerating) return;
-  const input = document.getElementById('chat-input');
-  const userText = input.value.trim();
-  if (!userText) return;
-
-  if (!apiBaseUrl || !apiKey) {
-    toggleSettings();
-    return;
-  }
-
-  input.value = '';
-  addMessage('user', userText);
-
-  // Show loading
-  document.getElementById('loading-indicator').style.display = 'block';
-  document.getElementById('preview-placeholder').style.display = 'none';
-  document.getElementById('send-btn').disabled = true;
-  isGenerating = true;
-
-  // Build messages
-  const isFirstTurn = conversationMessages.length === 0;
-  let messages = [];
-
-  if (isFirstTurn) {
-    messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userText },
-    ];
-  } else {
-    messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-    ];
-    // Replay previous turns
-    for (const m of conversationMessages) {
-      messages.push(m);
-    }
-    // Inject current TikZ source as context for modification
-    messages.push({
-      role: 'user',
-      content: `上一版图形的 TikZ 源码如下。基于此源码和你的修改要求，生成修改后的完整代码：\n\n=== 当前 TikZ 源码 ===\n${currentTikzSource}\n=== 源码结束 ===\n\n修改要求：${userText}`,
-    });
-  }
-
-  try {
-    const response = await callLLM(messages);
-    const tikzSource = extractTikz(response);
-
-    // Update state
-    if (currentTikzSource) {
-      tikzHistory.push(currentTikzSource);
-    }
-    currentTikzSource = tikzSource;
-
-    // Render
-    await renderTikz(tikzSource);
-
-    // Show reply
-    const shortReply = response.length > 200
-      ? response.substring(0, 200).replace(/\n/g, ' ') + '...'
-      : response.replace(/\n/g, ' ');
-    addMessage('assistant', '已生成图形 ✓');
-
-    // Save conversation
-    if (isFirstTurn) {
-      conversationMessages.push({ role: 'user', content: userText });
-      conversationMessages.push({ role: 'assistant', content: tikzSource });
-    } else {
-      conversationMessages = [
-        { role: 'user', content: conversationMessages[0].content },
-        { role: 'assistant', content: tikzSource },
-      ];
-    }
-
-    document.getElementById('error-banner').style.display = 'none';
-  } catch (e) {
-    document.getElementById('error-banner').textContent = '错误: ' + e.message;
-    document.getElementById('error-banner').style.display = 'block';
-    console.error(e);
-  } finally {
-    document.getElementById('loading-indicator').style.display = 'none';
-    document.getElementById('send-btn').disabled = false;
-    isGenerating = false;
-  }
-}
-
-// ============ 工具栏 ============
-function downloadSVG() {
-  const img = document.querySelector('#preview-canvas img');
-  if (!img || !img.src.startsWith('data:image/svg')) return;
-  const a = document.createElement('a');
-  a.href = img.src;
-  a.download = 'graph.svg';
-  a.click();
-}
-
-function downloadTeX() {
-  if (!currentTikzSource) return;
-  const blob = new Blob([currentTikzSource], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'graph.tex';
-  a.click();
-}
-
-function undoLast() {
-  if (tikzHistory.length === 0) return;
-  currentTikzSource = tikzHistory.pop();
-  renderTikz(currentTikzSource);
-}
-
-// ============ API 设置 ============
-function toggleSettings() {
-  const div = document.getElementById('api-settings');
-  if (div.style.display === 'flex') {
-    div.style.display = 'none';
-  } else {
-    document.getElementById('api-base-url').value = apiBaseUrl;
-    document.getElementById('api-key').value = apiKey;
-    document.getElementById('api-model').value = apiModel;
-    div.style.display = 'flex';
-  }
-}
-
-function saveSettings() {
-  apiBaseUrl = document.getElementById('api-base-url').value.trim();
-  apiKey = document.getElementById('api-key').value.trim();
-  apiModel = document.getElementById('api-model').value;
-  localStorage.setItem('talk2graph_base_url', apiBaseUrl);
-  localStorage.setItem('talk2graph_api_key', apiKey);
-  localStorage.setItem('talk2graph_model', apiModel);
-  document.getElementById('api-settings').style.display = 'none';
-}
-
-// Init: load saved settings
-document.addEventListener('DOMContentLoaded', () => {
-  if (apiBaseUrl && apiKey) {
-    document.getElementById('api-base-url').value = apiBaseUrl;
-    document.getElementById('api-key').value = apiKey;
-    document.getElementById('api-model').value = apiModel;
-  }
-});
-</script>
+<script src="./src/graph-engine.js"></script>
+<script src="./src/browser-app.js"></script>
 </body>
 </html>
