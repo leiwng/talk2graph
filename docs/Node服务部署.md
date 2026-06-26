@@ -34,39 +34,23 @@ npm run package:service
 - `src/graph-engine.js`
 - `src/llm-client.js`
 - `src/tikz-renderer.js`
+- `deploy/install-cvm.sh`
 - `deploy/systemd/talk2graph.service`
 - `deploy/nginx/talk2graph.conf`
 
 上传到 CVM、Lighthouse 或其他 Node 运行环境后：
 
 ```bash
-tar -xzf talk2graph-service.tar.gz
-cd talk2graph-service
-npm ci --omit=dev
-HOST=0.0.0.0 PORT=3000 npm start
+sudo bash deploy/install-cvm.sh /tmp/talk2graph-service.tar.gz
 ```
 
-如果使用 systemd、宝塔、PM2 或云厂商进程管理器，保持同样的环境变量即可：`HOST=0.0.0.0`、`PORT=3000`，模型配置见下一节。
+该脚本会解压到 `/opt/talk2graph-service`、安装生产依赖、安装 systemd unit、重启服务，并在服务器本机检查 `/healthz` 和直角三角形 AC 直径圆题图模板。模型配置见下一节。
 
 发布包会包含 `build-info.json`。部署后 `/healthz` 会返回 `version` 和 `commit`，用于确认公网服务实际加载的是哪一次打包产物。`npm run verify:service` 会要求这两个字段有效，`unknown` 会被判定为未通过部署验收。
 
 ### systemd + nginx 示例
 
-以下示例把 Node 服务只监听本机 `127.0.0.1:3000`，由 nginx 对外提供 HTTP 入口：
-
-```bash
-sudo useradd --system --home /opt/talk2graph-service --shell /usr/sbin/nologin talk2graph
-sudo mkdir -p /opt/talk2graph-service
-sudo tar -xzf talk2graph-service.tar.gz -C /opt
-cd /opt/talk2graph-service
-sudo npm ci --omit=dev
-sudo chown -R talk2graph:talk2graph /opt/talk2graph-service
-sudo cp deploy/systemd/talk2graph.service /etc/systemd/system/talk2graph.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now talk2graph
-```
-
-配置 nginx：
+`deploy/install-cvm.sh` 默认使用随包携带的 systemd 模板，把 Node 服务监听在本机 `127.0.0.1:3000`。如果需要由 nginx 对外提供 HTTP 入口，再执行：
 
 ```bash
 sudo cp deploy/nginx/talk2graph.conf /etc/nginx/conf.d/talk2graph.conf

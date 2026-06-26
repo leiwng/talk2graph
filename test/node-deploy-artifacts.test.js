@@ -64,6 +64,7 @@ test('Node service package script includes runtime files and excludes local-only
     'src/llm-client.js',
     'src/tikz-renderer.js',
     'build-info.json',
+    'deploy/install-cvm.sh',
     'deploy/systemd/talk2graph.service',
     'deploy/nginx/talk2graph.conf',
   ]) {
@@ -78,6 +79,22 @@ test('Node service package script includes runtime files and excludes local-only
   assert.match(source, /git/);
   assert.match(source, /rev-parse/);
   assert.match(source, /tar/);
+});
+
+test('CVM install script installs the package and verifies the running service metadata', () => {
+  const script = readProjectFile('deploy/install-cvm.sh');
+
+  assert.match(script, /set -euo pipefail/);
+  assert.match(script, /ARCHIVE=.*talk2graph-service\.tar\.gz/);
+  assert.match(script, /APP_DIR=.*\/opt\/talk2graph-service/);
+  assert.match(script, /tar -xzf/);
+  assert.match(script, /npm ci --omit=dev/);
+  assert.match(script, /systemctl daemon-reload/);
+  assert.match(script, /systemctl restart "\$\{SERVICE_NAME\}"/);
+  assert.match(script, /curl -fsS .*\/healthz/);
+  assert.match(script, /curl -fsS/);
+  assert.match(script, /\/api\/generate/);
+  assert.match(script, /diameter circle template/);
 });
 
 test('systemd template runs the packaged Node service with production defaults', () => {

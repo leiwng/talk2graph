@@ -18,6 +18,7 @@ const runtimeFiles = [
   'src/graph-engine.js',
   'src/llm-client.js',
   'src/tikz-renderer.js',
+  'deploy/install-cvm.sh',
   'deploy/systemd/talk2graph.service',
   'deploy/nginx/talk2graph.conf',
 ];
