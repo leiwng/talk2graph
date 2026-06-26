@@ -110,6 +110,24 @@ test('accepts right triangle side notation written with chang and degrees', () =
   assert.match(result.svg, />10</);
 });
 
+test('generates a right triangle with a diameter circle intersecting the hypotenuse', () => {
+  const result = generateGraph({
+    prompt: '画直角三角形 ABC，C 为直角顶点，AC=3，BC=4；以 AC 为直径画圆，圆与斜边 AB 相交于点 D',
+  });
+
+  assert.equal(result.kind, 'template');
+  assert.match(result.tikzSource, /\\coordinate \(C\) at \(0,0\);/);
+  assert.match(result.tikzSource, /\\coordinate \(A\) at \(0,3\);/);
+  assert.match(result.tikzSource, /\\coordinate \(B\) at \(4,0\);/);
+  assert.match(result.tikzSource, /\\coordinate \(O\) at \(0,1\.5\);/);
+  assert.match(result.tikzSource, /\\coordinate \(D\) at \(1\.44,1\.92\);/);
+  assert.match(result.tikzSource, /\(O\) circle \(1\.5\)/);
+  assert.match(result.tikzSource, /\\draw\[very thick\] \(A\) -- \(B\) -- \(C\) -- cycle;/);
+  assert.match(result.tikzSource, /\$D\$/);
+  assert.match(result.svg, />D</);
+  assert.match(result.svg, />以 AC 为直径的圆</);
+});
+
 test('generates sin and cos plots from -2pi to 2pi', () => {
   const result = generateGraph({
     prompt: '画 y = sin(x) 和 y = cos(x) 在 -2π 到 2π 的图像，用不同颜色区分',

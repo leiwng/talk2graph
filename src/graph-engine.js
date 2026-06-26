@@ -113,6 +113,89 @@
 </svg>`;
   }
 
+  function rightTriangleDiameterCircleGeometry({ ac = 3, bc = 4 } = {}) {
+    const denominator = ac * ac + bc * bc;
+    return {
+      ac,
+      bc,
+      ab: Math.sqrt(denominator),
+      radius: ac / 2,
+      centerY: ac / 2,
+      dX: (ac * ac * bc) / denominator,
+      dY: (ac * bc * bc) / denominator,
+    };
+  }
+
+  function rightTriangleDiameterCircleTemplate(options = {}) {
+    const geometry = rightTriangleDiameterCircleGeometry(options);
+    const ac = formatNumber(geometry.ac);
+    const bc = formatNumber(geometry.bc);
+    const ab = formatNumber(geometry.ab);
+    const radius = formatNumber(geometry.radius);
+    const centerY = formatNumber(geometry.centerY);
+    const dX = formatNumber(geometry.dX);
+    const dY = formatNumber(geometry.dY);
+
+    return wrapDocument(String.raw`
+\begin{tikzpicture}[scale=1]
+  \coordinate (C) at (0,0);
+  \coordinate (A) at (0,${ac});
+  \coordinate (B) at (${bc},0);
+  \coordinate (O) at (0,${centerY});
+  \coordinate (D) at (${dX},${dY});
+
+  \draw[very thick] (A) -- (B) -- (C) -- cycle;
+  \draw[thick] (0,0.35) -- (0.35,0.35) -- (0.35,0);
+  \draw[thick, blue] (O) circle (${radius});
+  \draw[dashed] (A) -- (C);
+
+  \node[left] at ($(A)!0.5!(C)$) {${ac}};
+  \node[below] at ($(B)!0.5!(C)$) {${bc}};
+  \node[above right] at ($(A)!0.5!(B)$) {${ab}};
+  \node[below left] at (C) {直角};
+  \node[left] at (A) {$A$};
+  \node[right] at (B) {$B$};
+  \node[below left] at (C) {$C$};
+  \fill (O) circle (1.5pt) node[left] {$O$};
+  \fill[red] (D) circle (1.8pt) node[above right] {$D$};
+  \node[blue, right] at (${radius + 0.25},${centerY}) {以 AC 为直径的圆};
+\end{tikzpicture}`);
+  }
+
+  function rightTriangleDiameterCircleSvg(options = {}) {
+    const geometry = rightTriangleDiameterCircleGeometry(options);
+    const baseX = 120;
+    const baseY = 330;
+    const unit = Math.min(240 / Math.max(geometry.ac, geometry.bc), 60);
+    const a = { x: baseX, y: baseY - geometry.ac * unit };
+    const b = { x: baseX + geometry.bc * unit, y: baseY };
+    const c = { x: baseX, y: baseY };
+    const o = { x: baseX, y: baseY - geometry.centerY * unit };
+    const d = { x: baseX + geometry.dX * unit, y: baseY - geometry.dY * unit };
+    const radius = geometry.radius * unit;
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="400" viewBox="0 0 560 400">
+  <style>.shape{fill:none;stroke:#111827;stroke-width:3;stroke-linejoin:round}.circle{fill:none;stroke:#2563eb;stroke-width:3}.helper{fill:none;stroke:#6b7280;stroke-width:2;stroke-dasharray:7 5}.label{font:16px -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;fill:#111827}.point{font:15px serif;fill:#111827}</style>
+  <rect width="560" height="400" fill="#fff"/>
+  <path d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)} L${c.x.toFixed(1)} ${c.y.toFixed(1)} Z" class="shape"/>
+  <path d="M${c.x.toFixed(1)} ${(c.y - 28).toFixed(1)} L${(c.x + 28).toFixed(1)} ${(c.y - 28).toFixed(1)} L${(c.x + 28).toFixed(1)} ${c.y.toFixed(1)}" class="shape"/>
+  <circle cx="${o.x.toFixed(1)}" cy="${o.y.toFixed(1)}" r="${radius.toFixed(1)}" class="circle"/>
+  <line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${c.x.toFixed(1)}" y2="${c.y.toFixed(1)}" class="helper"/>
+  <circle cx="${o.x.toFixed(1)}" cy="${o.y.toFixed(1)}" r="4" fill="#111827"/>
+  <circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="5" fill="#dc2626"/>
+  <text x="${(a.x - 18).toFixed(1)}" y="${(a.y - 8).toFixed(1)}" class="point">A</text>
+  <text x="${(b.x + 8).toFixed(1)}" y="${(b.y + 5).toFixed(1)}" class="point">B</text>
+  <text x="${(c.x - 28).toFixed(1)}" y="${(c.y + 22).toFixed(1)}" class="point">C</text>
+  <text x="${(o.x - 28).toFixed(1)}" y="${(o.y + 5).toFixed(1)}" class="point">O</text>
+  <text x="${(d.x + 8).toFixed(1)}" y="${(d.y - 8).toFixed(1)}" class="point">D</text>
+  <text x="${(a.x - 34).toFixed(1)}" y="${((a.y + c.y) / 2).toFixed(1)}" class="label">${formatNumber(geometry.ac)}</text>
+  <text x="${((b.x + c.x) / 2).toFixed(1)}" y="${(c.y + 24).toFixed(1)}" text-anchor="middle" class="label">${formatNumber(geometry.bc)}</text>
+  <text x="${((a.x + b.x) / 2 + 22).toFixed(1)}" y="${((a.y + b.y) / 2 - 8).toFixed(1)}" class="label">${formatNumber(geometry.ab)}</text>
+  <text x="${(c.x + 34).toFixed(1)}" y="${(c.y - 36).toFixed(1)}" class="label">直角</text>
+  <text x="${(o.x + radius + 12).toFixed(1)}" y="${(o.y + 5).toFixed(1)}" class="label">以 AC 为直径的圆</text>
+</svg>`;
+  }
+
   function equilateralTriangleTemplate(side = 5) {
     const s = formatNumber(side);
     const height = formatCoordinate((Math.sqrt(3) * side) / 2);
@@ -2062,6 +2145,22 @@ ${labels}
     return { vertical, horizontal };
   }
 
+  function extractRightTriangleDiameterCircleOptions(prompt) {
+    const normalized = normalizePrompt(prompt);
+    if (!/直角三角形/.test(normalized)) return null;
+    if (!/(?:c为直角顶点|c是直角顶点|∠c(?:=|是|为)?90(?:°|度)?|角c(?:=|是|为)?90(?:°|度)?)/.test(normalized)) return null;
+    if (!/ac为直径|以ac.*直径/.test(normalized)) return null;
+    if (!/圆.*(?:斜边ab|ab).*相交.*d|圆.*交.*(?:斜边ab|ab).*d/.test(normalized)) return null;
+
+    const acMatch = normalized.match(/ac(?:=|是|为|长)(-?\d+(?:\.\d+)?)(?:cm|厘米)?/);
+    const bcMatch = normalized.match(/bc(?:=|是|为|长)(-?\d+(?:\.\d+)?)(?:cm|厘米)?/);
+    if (!(acMatch && bcMatch)) return null;
+    const ac = Number(acMatch[1]);
+    const bc = Number(bcMatch[1]);
+    if (!(ac > 0 && bc > 0)) return null;
+    return { ac, bc };
+  }
+
   function extractRadius(prompt) {
     const normalized = normalizePrompt(prompt);
     const match = normalized.match(/半径(?:是|为)?(-?\d+(?:\.\d+)?)(?:cm|厘米)?/);
@@ -2609,6 +2708,16 @@ ${labels}
         tikzSource: rightTriangleIncircleTemplate(legs),
         svg: rightTriangleIncircleSvg(legs),
         message: `已生成 ${formatNumber(legs.vertical)}-${formatNumber(legs.horizontal)}-${hypotenuseLabel(legs.vertical, legs.horizontal)} 直角三角形的内切圆。`,
+      };
+    }
+
+    const diameterCircleOptions = extractRightTriangleDiameterCircleOptions(prompt);
+    if (diameterCircleOptions) {
+      return {
+        kind: 'template',
+        tikzSource: rightTriangleDiameterCircleTemplate(diameterCircleOptions),
+        svg: rightTriangleDiameterCircleSvg(diameterCircleOptions),
+        message: '已生成直角三角形、以 AC 为直径的圆，并标出圆与斜边 AB 的交点 D。',
       };
     }
 
