@@ -107,14 +107,14 @@ test('Node deployment docs show how to run the installer directly from the archi
   assert.match(docs, /sudo bash -s -- \/tmp\/talk2graph-service\.tar\.gz/);
 });
 
-test('systemd template runs the packaged Node service with production defaults', () => {
+test('systemd template runs the packaged Node service on a public interface', () => {
   const service = readProjectFile('deploy/systemd/talk2graph.service');
 
   assert.match(service, /\[Unit\]/);
   assert.match(service, /After=network-online\.target/);
   assert.match(service, /WorkingDirectory=\/opt\/talk2graph-service/);
   assert.match(service, /Environment=NODE_ENV=production/);
-  assert.match(service, /Environment=HOST=127\.0\.0\.1/);
+  assert.match(service, /Environment=HOST=0\.0\.0\.0/);
   assert.match(service, /Environment=PORT=3000/);
   assert.match(service, /ExecStart=\/usr\/bin\/npm start/);
   assert.match(service, /Restart=always/);

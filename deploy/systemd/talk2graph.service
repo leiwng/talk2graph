@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=/opt/talk2graph-service
 Environment=NODE_ENV=production
-Environment=HOST=127.0.0.1
+Environment=HOST=0.0.0.0
 Environment=PORT=3000
 ExecStart=/usr/bin/npm start
 Restart=always

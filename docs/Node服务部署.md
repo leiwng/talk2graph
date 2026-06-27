@@ -45,13 +45,13 @@ tar -xOf /tmp/talk2graph-service.tar.gz talk2graph-service/deploy/install-cvm.sh
   | sudo bash -s -- /tmp/talk2graph-service.tar.gz
 ```
 
-该脚本会从发布包解压到 `/opt/talk2graph-service`、安装生产依赖、安装 systemd unit、重启服务，并在服务器本机检查 `/healthz` 的版本提交号和直角三角形 AC 直径圆题图模板。模型配置见下一节。
+该脚本会从发布包解压到 `/opt/talk2graph-service`、安装生产依赖、安装 systemd unit、用 `0.0.0.0:3000` 重启服务，并在服务器本机检查 `/healthz` 的版本提交号和直角三角形 AC 直径圆题图模板。模型配置见下一节。
 
 发布包会包含 `build-info.json`。部署后 `/healthz` 会返回 `version` 和 `commit`，用于确认公网服务实际加载的是哪一次打包产物。`npm run verify:service` 会要求这两个字段有效，`unknown` 会被判定为未通过部署验收。
 
-### systemd + nginx 示例
+### 可选 nginx 反代
 
-`deploy/install-cvm.sh` 默认使用随包携带的 systemd 模板，把 Node 服务监听在本机 `127.0.0.1:3000`。如果需要由 nginx 对外提供 HTTP 入口，再执行：
+`deploy/install-cvm.sh` 默认使用随包携带的 systemd 模板，把 Node 服务监听在公网 `0.0.0.0:3000`，可直接用 `http://服务器公网IP:3000` 访问。如果后续需要域名和 80/443 端口，再配置 nginx 反代：
 
 ```bash
 sudo cp deploy/nginx/talk2graph.conf /etc/nginx/conf.d/talk2graph.conf
